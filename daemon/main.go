@@ -2,10 +2,9 @@ package main
 
 import (
 	"flag"
+	"log"
 
-	"github.com/rs/xid"
-
-	wampSerializer "github.com/wamp3hub/wamp3go/serializer"
+	wampSerializer "github.com/wamp3hub/wamp3go/serializers"
 
 	bridge "github.com/wamp3hub/wamp3bridge"
 	bridgeTransports "github.com/wamp3hub/wamp3bridge/transports"
@@ -18,11 +17,17 @@ func main() {
 	rightTicket := flag.String("rightTicket", "", "")
 	flag.Parse()
 
-	left, _ := bridgeTransports.WebsocketJoin(*leftAddress, xid.New().String(), *leftTicket, wampSerializer.DefaultSerializer)
-	right, _ := bridgeTransports.WebsocketJoin(*rightAddress, xid.New().String(), *rightTicket, wampSerializer.DefaultSerializer)
+	leftRouter, leftRouterJoinError := bridgeTransports.WebsocketJoin(*leftAddress, *leftTicket, wampSerializer.DefaultSerializer)
+	rightRouter, rightRouterJoinError := bridgeTransports.WebsocketJoin(*rightAddress, *rightTicket, wampSerializer.DefaultSerializer)
+
+	if leftRouterJoinError == nil && rightRouterJoinError == nil {
+		log.Printf("Connected")
+	} else {
+		log.Printf("Failed to unite")
+	}
 
 	select {
-	case <-bridge.Unite(left, right):
-	case <-bridge.Unite(right, left):
+	case <-bridge.Unite(leftRouter, rightRouter):
+	case <-bridge.Unite(rightRouter, leftRouter):
 	}
 }
